@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class ExampleController {
     private final ExampleService exampleService;
+    private ExampleDto exampleDto;
 
     @Autowired
     public ExampleController(ExampleService exampleService) {
@@ -34,13 +35,28 @@ public class ExampleController {
             }
     )
     public ResponseEntity<String> sayHello(@RequestParam String name, @RequestParam String description) {
-        log.info("Incoming hello Request from " + name);
 
         try {
-            ExampleDto exampleDto = new ExampleDto();
+            exampleDto = new ExampleDto();
             exampleDto.setName(name);
             exampleDto.setDescription(description);
 
+            return ResponseEntity.ok(exampleService.sayHello(exampleDto));
+        } catch (ExampleException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+    
+    @GetMapping("/gethello")
+    @ApiOperation(value = "Say Hello")
+    @ApiResponses(
+            value = {
+                    @ApiResponse(code = 200, message = "OK", response = ExampleDto.class)
+            }
+    )
+    public ResponseEntity<String> getHello() {
+
+        try {
             return ResponseEntity.ok(exampleService.sayHello(exampleDto));
         } catch (ExampleException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
