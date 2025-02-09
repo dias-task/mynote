@@ -1,12 +1,9 @@
 package com.astrapay.controller;
 
 import com.astrapay.dto.NoteDto;
-import com.astrapay.exception.ExampleException;
 import com.astrapay.service.NoteService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -41,32 +38,53 @@ public class NoteController {
 
     @GetMapping("/get-note")
     @ApiOperation(value = "Get Note")
-    public ResponseEntity<Map<String,Object>> get_note() {
+    public ResponseEntity<Map<String,Object>> get_note(@RequestParam(required=false) String id) {
 
+    	Map<String, Object> response = new HashMap<>();
+    	
         try {
-        	Map<String, Object> response = new HashMap<>();
-    		response.put("data", noteCollection);
+        	
+        	if (id != null) {
+        		List<NoteDto> filteredList;
+                filteredList = noteCollection.stream()
+                  .filter(note -> id.contains(note.id))
+                  .collect(Collectors.toList());
+                response.put("data", filteredList);
+        	}else {
+        		response.put("data", noteCollection);
+        	}
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-        	Map<String, Object> response = new HashMap<>();
     		response.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
     
-    @PostMapping("/add-note")
-    @ApiOperation(value = "Add Note")
-    public ResponseEntity<Map<String, Object>> add_note(@RequestBody Map<String,Object> body) {
+    @PostMapping("/upsert-note")
+    @ApiOperation(value = "Update or Add New Note")
+    public ResponseEntity<Map<String, Object>> upsert_note(@RequestBody Map<String,Object> body) {
 
-        try {
-        	NoteDto noteSubmitted = new NoteDto();
-        	noteSubmitted.addNote(body.get("title").toString(), body.get("note").toString());
-        	noteCollection.add(noteSubmitted);
-        	Map<String, Object> response = new HashMap<>();
-    		response.put("data", noteCollection);
-            return ResponseEntity.ok(response);
+    	Map<String, Object> response = new HashMap<>();
+    	
+    	try {
+    		//validation
+    		if (!body.containsKey("title")) { //missing param: title
+    			response.put("error", "Missing 'title' parameter");
+    			return ResponseEntity.badRequest().body(response);
+    		}else if (body.get("title").toString() == ""){ //param title is empty
+    			response.put("error", "'title' parameter can not be empty");
+    			return ResponseEntity.badRequest().body(response); 
+    		}else if (!body.containsKey("notes")) {	//missing param: notes
+    			response.put("error", "Missing 'notes' parameter");
+    			return ResponseEntity.badRequest().body(response);
+    		}else {
+    			NoteDto noteSubmitted = new NoteDto();
+            	noteSubmitted.addNote(body.get("title").toString(), body.get("notes").toString());
+            	noteCollection.add(noteSubmitted);
+        		response.put("data", noteCollection);
+        		return ResponseEntity.ok(response);
+    		}
         } catch (Exception e) {
-        	Map<String, Object> response = new HashMap<>();
     		response.put("error", e.getMessage());
         	return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
@@ -74,13 +92,20 @@ public class NoteController {
     
     @DeleteMapping("/delete-note")
     @ApiOperation(value = "DeleteNote")
-    public ResponseEntity<Map<String,String>> delete_note(@RequestParam String id){
+    public ResponseEntity<Map<String,Object>> delete_note(@RequestParam String id){
+    	
+    	Map<String, Object> response = new HashMap<>();
+    	
     	try {
-    		Map<String, String> response = new HashMap<>();
-    		response.put("error", id.toString());
-    		return ResponseEntity.ok(response);
+        	boolean deletedNote;
+            deletedNote = noteCollection.removeIf(note -> id.contains(note.id));
+            if(deletedNote) {
+            	response.put("message", "Note " + id + " has been deleted");
+            }else {
+            	response.put("error", "Note " + id + " has not been deleted");
+            }
+            return ResponseEntity.ok(response);
     	} catch (Exception e) {
-    		Map<String, String> response = new HashMap<>();
     		response.put("error", e.getMessage());
     		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     	}
