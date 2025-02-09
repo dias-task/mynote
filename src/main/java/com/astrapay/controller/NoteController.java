@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -77,6 +78,19 @@ public class NoteController {
     		}else if (!body.containsKey("notes")) {	//missing param: notes
     			response.put("error", "Missing 'notes' parameter");
     			return ResponseEntity.badRequest().body(response);
+    		}else if (body.containsKey("id") && body.get("id").toString() != ""){ //has id param, update
+    			int index = IntStream.range(0, noteCollection.size())
+    					.filter(i -> noteCollection.get(i).id.equals(body.get("id").toString()))
+    					.findFirst()
+    					.orElse(-1);
+    			if (index == -1) {
+    				response.put("error", "Notes not found");
+        			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    			}else {
+    				noteCollection.get(index).updateNote(body.get("title").toString(), body.get("notes").toString());
+    				response.put("data", noteCollection);
+            		return ResponseEntity.ok(response);
+    			}
     		}else {
     			NoteDto noteSubmitted = new NoteDto();
             	noteSubmitted.addNote(body.get("title").toString(), body.get("notes").toString());
