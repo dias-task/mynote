@@ -14,3 +14,7 @@ Berikut adalah aplikasi note dengan basis frame Astrapay.
 ### Postman
 
 https://api.postman.com/collections/17385417-0527aacc-fe76-4d76-accc-c932232eb564?access_key=PMAT-01JKPNYX7WBVCN2TF0B19ZRWYJ
+
+### Basic Web Frontend
+
+https://github.com/dias-task/mynote-fe-simple.git
